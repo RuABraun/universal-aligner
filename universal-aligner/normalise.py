@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*
-import regex as re
 import locale
+import multiprocessing as mp
+import os
+from functools import partial
+from os.path import join
+
+import regex as re
+from loguru import logger
+
+from util.useful_funcs import getbname
 
 CHAR_MAPPINGS = {'υ': 'u', '…': '.', '\u2025': '.', '\u2024': '.', '\u03BD': 'v', 'º': '°',
                  chr(8208): '-', chr(8209): '-', chr(8210): '-', chr(8212): ' ', chr(8211): ' ', chr(8213): ' '}
@@ -33,6 +41,23 @@ def normalise_file(fpath_in, fpath_out=None, remove_hyphens=True):
         fpath_out = fpath_in
     with open(fpath_out, 'w') as fh:
         fh.write(text)
+
+
+def normalise_file_wrapper(variable_args, remove_hyphens):
+    fpath_in, fpath_out = variable_args
+    normalise_file(fpath_in, fpath_out, remove_hyphens)
+
+
+def normalise_files(lst_files, nj, outdir):
+    os.makedirs(outdir, exist_ok=True)
+    func = partial(normalise_file_wrapper, remove_hyphens=True)
+    logger.info(f'Starting to normalise {len(lst_files)} files.')
+    lst_args = [(e, join(outdir, getbname(e) + '.txt')) for e in lst_files]
+    with mp.Pool(nj) as pool:
+        pool.map(func, lst_args)
+    logger.info('Done normalisation.')
+    lst_txts = [e[1] for e in lst_args]
+    return lst_txts
 
 
 if __name__ == '__main__':

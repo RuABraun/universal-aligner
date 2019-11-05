@@ -2,11 +2,11 @@
 import os
 import shutil
 import subprocess as sp
-from os.path import join, exists, basename, splitext
+from os.path import join, exists
 
 from loguru import logger
 
-from util.io_funcs import readl
+from util.useful_funcs import readl, getbname
 
 
 def create_kdata(fpath_seg, lst_wavs, dir_new):
@@ -17,7 +17,7 @@ def create_kdata(fpath_seg, lst_wavs, dir_new):
 
     wavids = []
     for wavpath in lst_wavs:
-        wavids.append(splitext(basename(wavpath))[0])
+        wavids.append(getbname(wavpath))
     wavids = set(wavids)
 
     uttids = []

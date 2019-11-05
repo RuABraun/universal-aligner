@@ -3,10 +3,10 @@ import locale
 import multiprocessing as mp
 import subprocess as sp
 import tempfile
-from loguru import logger
 from os.path import abspath
 
 import regex as re
+from loguru import logger
 
 JOBS = mp.cpu_count()
 ptn_punct = re.compile("[ˌːˈ]")

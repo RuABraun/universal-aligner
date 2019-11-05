@@ -1,3 +1,5 @@
+Still Work In Progress!
+
 # Universal Aligner
 
 A tool for segmenting the transcript of an audio file in an arbitrary language.
