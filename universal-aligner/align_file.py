@@ -12,20 +12,23 @@ def align_file(fpath_work, fpath_audio, fpath_text, dir_am, fpath_mfccconf, fpat
     fpath_ctm = os.path.join(fpath_work, 'out.ctm')
     done_file = os.path.join(fpath_work, 'done')
     if not os.path.exists(done_file):
-        cmd = f'LC_ALL=C ./force_align.sh {fpath_work} {fpath_audio} {fpath_text} {dir_am} {fpath_lex} {fpath_unknown_phones} {fpath_mfccconf} > {fpath_work}/force_align.log 2>&1'
+        cmd = f'LC_ALL=C ./force_align.sh {fpath_work} {fpath_audio} {fpath_text} {dir_am} {fpath_lex} ' \
+            f'"{fpath_unknown_phones}" {fpath_mfccconf} > {fpath_work}/force_align.log 2>&1'
         retcode = sp.call(cmd, shell=True)
     else:
         retcode = 0
         logger.info(f'Skipping alignment as {done_file} exists.')
 
-    if retcode == 0:
+    if retcode == 0 and os.path.exists(fpath_ctm) and os.path.getsize(fpath_ctm) > 0:
         wavid = getbname(fpath_audio)
         ctm2seg(fpath_ctm, fpath_seg, wavid)
     else:
         logger.info(f'Alignment failed with audio {fpath_audio} work dir: {fpath_work}')
+        if os.path.exists(fpath_seg):
+            os.remove(fpath_seg)
 
 
-def align_file_wrapper(variable_args, dir_am, fpath_mfccconf, fpath_lex, fpath_unknown_phones):
+def align_file_wrapper(variable_args, dir_am, fpath_mfccconf, fpath_lex, fpath_unknown_phones=""):
     fpath_audio, fpath_text, fpath_work, fpath_seg = variable_args
     align_file(fpath_work, fpath_audio, fpath_text, dir_am, fpath_mfccconf, fpath_seg, fpath_lex, fpath_unknown_phones)
 

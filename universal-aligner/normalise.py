@@ -12,8 +12,9 @@ from util.useful_funcs import getbname
 
 CHAR_MAPPINGS = {'υ': 'u', '…': '.', '\u2025': '.', '\u2024': '.', '\u03BD': 'v', 'º': '°',
                  chr(8208): '-', chr(8209): '-', chr(8210): '-', chr(8212): ' ', chr(8211): ' ', chr(8213): ' '}
-BAD_SYMBOLS = re.compile(r'[&_"=\%@,;<>\[\]\(\)\+*“”„‟\u201D\.?!:\u2018\u2019\u02BC]')
+BAD_SYMBOLS = re.compile(r'[&_"=\%@;<>\[\]\(\)\+*“”„‟\u201D\.?!:\u2018\u2019\u02BC]')
 PTN_BRACKET = re.compile(r'[(\[]{1}[\p{L}[:punct:]\s\d]*?[)\]]{1}')
+PTN_COMMA = re.compile(r'(?<!\d),(?!\d)')
 
 
 def normalise_text(text, remove_hyphens=True):
@@ -22,7 +23,9 @@ def normalise_text(text, remove_hyphens=True):
         lst.append(CHAR_MAPPINGS.get(c, c))
     text = ''.join(lst)
     text = PTN_BRACKET.sub(' ', text)
-    text = text.replace('&gt;', '')
+    text = PTN_COMMA.sub('', text)
+    text = text.replace('&gt;', ' ')
+    text = text.replace('&nbsp;', ' ')
     text = BAD_SYMBOLS.sub(' ', text)
     if remove_hyphens:
         text = text.replace('-', ' ')

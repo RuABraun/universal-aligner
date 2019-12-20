@@ -73,23 +73,25 @@ def main(lang,
         get_prons(fpath_vocab, fpath_lex, lang, fpath_unknown_phones)
 
     logger.info('Aligning audio and text using ENG model.')
-    f = partial(align_file_wrapper, dir_am=dir_am, fpath_mfccconf=fpath_mfccconf, fpath_lex=fpath_lex_unknown, \
+    f = partial(align_file_wrapper, dir_am=dir_am, fpath_mfccconf=fpath_mfccconf, fpath_lex=fpath_lex_unknown,
                 fpath_unknown_phones=fpath_unknown_phones)
     lst_args = [(wav, txt, work, join(work, 'seg')) for wav, txt, work in zip(lst_wavs, lst_txts, lst_work)]
     with mp.Pool(num_jobs, initializer=mute) as p:
         p.map(f, lst_args)
 
-    logger.info('Done aligning, formatting data.')
-    lst_segs = [e[3] for e in lst_args]
-    fpath_seg = join(dir_work, 'all_seg')
-    join_segs(lst_segs, fpath_seg)
-    dir_train_init = join(dir_work, 'train_init')
-    create_kdata(fpath_seg, lst_wavs, dir_train_init)
+    if not os.path.exists(f'{dir_work}/train_gmm_done'):
+        logger.info('Done aligning, formatting data.')
+        lst_segs = [e[3] for e in lst_args]
+        fpath_seg = join(dir_work, 'all_seg')
+        join_segs(lst_segs, fpath_seg)
+        dir_train_init = join(dir_work, 'train_init')
+        create_kdata(fpath_seg, lst_wavs, dir_train_init)
 
-    logger.info('Using alignment to train language specific model.')
-    shutil.copyfile(fpath_mfccconf, join(dir_work, 'mfcc.conf'))
-    cmd = f'LC_ALL=C ./train_gmm.sh --nj {num_jobs} --work {dir_work} --language {lang}'
-    sp.check_output(cmd, shell=True)
+        fpath_log = f'{dir_work}/train_gmm.log'
+        logger.info(f'Using alignment to train language specific model, log in {fpath_log}')
+        shutil.copyfile(fpath_mfccconf, join(dir_work, 'mfcc.conf'))
+        cmd = f'LC_ALL=C ./train_gmm.sh --nj {num_jobs} --work {dir_work} --language {lang} > {fpath_log} 2>&1'
+        sp.check_output(cmd, shell=True)
 
     logger.info('Done training language specific model, aligning data using it.')
 

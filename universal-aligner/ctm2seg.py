@@ -2,6 +2,8 @@
 import numpy as np
 from loguru import logger
 
+TARGET_DURATION = 10.0  # seconds
+
 
 class Seg:
     def __init__(self, words, start_time_s, end_time_s, speech_dur_s=None, splits=None, segid=''):
@@ -40,11 +42,12 @@ class Seg:
 def gainfunc(lst_segs):
     """ Minimum of the two speech durations (from 2 segs) plus 1, 
         plus optimal segment length minus segment lengths,
-        minus distance between segs squared plus distance """
+        minus distance between segs squared plus distance
+    """
     gains = []
     for seg1, seg2 in zip(lst_segs[:-1], lst_segs[1:]):
         speech_term = min(seg1.speech_dur_s, seg2.speech_dur_s) + 1
-        length_term = (10.0 - (seg1.end_time_s - seg1.start_time_s) - (seg2.end_time_s - seg2.start_time_s))
+        length_term = (TARGET_DURATION - (seg1.end_time_s - seg1.start_time_s) - (seg2.end_time_s - seg2.start_time_s))
         diff_ = - ((seg2.start_time_s - seg1.end_time_s) ** 2 + abs(seg2.start_time_s - seg1.end_time_s))
         
         gain = speech_term + \
@@ -56,7 +59,8 @@ def gainfunc(lst_segs):
 
 def join_at_indcs(lst_segs, indcs_in):
     """ Idx points as seg2 if [seg1, seg2] are to be joined. 
-    I hate this approach. """
+    I hate this approach.
+    """
 
     if not indcs_in:
         return lst_segs

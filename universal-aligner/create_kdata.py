@@ -36,9 +36,10 @@ def create_kdata(fpath_seg, lst_wavs, dir_new):
     fh_kseg.close()
     fh_text.close()
 
-    wavids = list(wavids)
     with open(join(dir_new, 'wav.scp'), 'w') as fh:
-        for wavid, wavpath in zip(wavids, lst_wavs):
+        for wavpath in lst_wavs:
+            wavid = getbname(wavpath)
+            assert wavid in wavids
             fh.write(f'{wavid} {wavpath}\n')
 
     with open(join(dir_new, 'utt2spk'), 'w') as fha, open(join(dir_new, 'spk2utt'), 'w') as fhb:

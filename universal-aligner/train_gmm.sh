@@ -11,11 +11,11 @@ language=
 . utils/parse_options.sh
 
 exp=$work/exp
-data=$work/lang
+data=$work
 lang=$work/lang_${language}
 
 if [ $stage -le 0 ]; then
-	create_lang.sh $work/lexicon.txt $work $lang
+	create_lang.sh $work/lexicon.txt $work "" $lang
 fi
 
 if [ $stage -le 1 ]; then
@@ -25,13 +25,19 @@ if [ $stage -le 1 ]; then
 fi
 
 if [ $stage -le 2 ]; then
-	utils/subset_data_dir.sh $data/train_init 30000 $data/train_30k
-	steps/train_mono.sh --nj $nj --cmd "$train_cmd" $data/train_30k $lang $exp/mono
-	steps/align_si.sh --nj $nj --cmd "$train_cmd" $data/train_30k $lang $exp/mono $exp/mono_ali
+	monodata=$data/train_init
+	if [ $(wc -l < $data/train_init/text) -ge 15000 ]; then
+		utils/subset_data_dir.sh $data/train_init 15000 $data/train_30k
+		monodata=$data/train_30k
+	fi
+	steps/train_mono.sh --nj $nj --cmd "$train_cmd" $monodata $lang $exp/mono
+	steps/align_si.sh --nj $nj --cmd "$train_cmd" $monodata $lang $exp/mono $exp/mono_ali
 fi
 
 context_ops="--context-width=3 --central-position=1"
 if [ $stage -le 3 ]; then
-	steps/train_deltas.sh --context_opts "$context_ops" --cmd "$train_cmd" 5000 60000 $data/train_init $lang $exp/mono_ali \
+	steps/train_deltas.sh --context_opts "$context_ops" --cmd "$train_cmd" 3000 15000 $data/train_init $lang $exp/mono_ali \
 		$exp/tri1
 fi;
+
+touch $work/train_gmm_done

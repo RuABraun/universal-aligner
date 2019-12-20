@@ -26,4 +26,8 @@ cat $local/silence_phones.txt| awk '{printf("%s ", $1);} END{printf "\n";}' > $l
 awk '{for(i=2;i<=NF;i++) a[$i];} END {for(w in a) print w}' $lex | grep -v 'sil' > $local/nonsilence_phones.txt
 cp $lex $local/lexicon.txt
 
-utils/prepare_lang.sh --phone-symbol-table $am/phones.txt $local "<unk>" $tmplang $lang 2>&1 > $work/preplang.log
+phone_opt=""
+if [ -n "$am" ]; then
+	phone_opt="--phone-symbol-table $am/phones.txt"
+fi
+utils/prepare_lang.sh $phone_opt $local "<unk>" $tmplang $lang 2>&1 > $work/preplang.log

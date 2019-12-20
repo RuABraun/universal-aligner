@@ -1,9 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash
 set -o pipefail
 
 . path.sh
 
-opts="--transition-scale=1.0 --self-loop-scale=0.1 --batch-size=1"
+scale_opts="--transition-scale=1.0 --self-loop-scale=0.1 --batch-size=1"
 shift=0.01
 
 if [ $# != 7 ]; then
@@ -17,13 +17,12 @@ faudio=`readlink -f $2`
 ftext=`readlink -f $3`
 am=`readlink -f $4`
 lex=`readlink -f $5`
-f_unknown_jnk=`readlink -f $6`
+f_unknown_jnk=$6
 mfcc_config=`readlink -f $7`
 
-beam=64
+beam=32
 
-echo "Work dir: $work"
-
+echo "Work dir: $work "
 echo "file $faudio" > $work/wav.scp
 
 # Build data/lang
@@ -38,7 +37,7 @@ if [ ! -f $work/prepdone ]; then
 	utils/sym2int.pl $lang/words.txt $ftext | tr '\n' ' ' > $textint
 	echo "file $textint" > $work/text.scp
 
-	compile-train-graphs $opts $am/tree $am/final.mdl $lang/L.fst scp:$work/text.scp ark:$work/HCLG.fst.ark
+	compile-train-graphs $scale_opts $am/tree $am/final.mdl $lang/L.fst scp:$work/text.scp ark:$work/HCLG.fst.ark
 
 	# Feats prep
 	compute-mfcc-feats --config=$mfcc_config scp,p:$work/wav.scp ark:- | \
@@ -53,7 +52,8 @@ touch $work/prepdone
 
 echo "Doing biased decoding"
 
-gmm-latgen-faster --beam=$beam --acoustic-scale=1.0 --lattice-beam=8 --prune-interval=200 --max-mem=1000000000 --max-active=3000 --min-active=200 --boost-likel=true --jnk_phone_ids_fpath=$f_unknown_jnk \
+gmm-latgen-faster --allow-partial=true --beam=$beam --acoustic-scale=0.1 --lattice-beam=1 --prune-interval=200 --max-mem=1000000000 \
+		--max-active=5000 --min-active=200 --boost-likel=true --jnk_phone_ids_fpath=$f_unknown_jnk \
 		--word-symbol-table=$work/lang/words.txt $am/final.mdl \
     ark:$work/HCLG.fst.ark "$feats" ark:- | \
 lattice-align-words $lang/phones/word_boundary.int $am/final.mdl ark:- ark:- | \
